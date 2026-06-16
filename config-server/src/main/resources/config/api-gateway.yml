@@ -1,0 +1,81 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/v1/auth/**
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/users/**
+          filters:
+            - JwtAuthenticationFilter
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/api/v1/products/**
+          filters:
+            - JwtAuthenticationFilter
+        - id: inventory-service
+          uri: lb://inventory-service
+          predicates:
+            - Path=/api/v1/inventory/**
+          filters:
+            - JwtAuthenticationFilter
+        - id: cart-service
+          uri: lb://cart-service
+          predicates:
+            - Path=/api/v1/cart/**
+          filters:
+            - JwtAuthenticationFilter
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/v1/orders/**
+          filters:
+            - JwtAuthenticationFilter
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/payments/**
+          filters:
+            - JwtAuthenticationFilter
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+springdoc:
+  swagger-ui:
+    urls:
+      - name: Auth Service
+        url: /api/v1/auth/v3/api-docs
+      - name: User Service
+        url: /api/v1/users/v3/api-docs
+      - name: Product Service
+        url: /api/v1/products/v3/api-docs
+      - name: Inventory Service
+        url: /api/v1/inventory/v3/api-docs
+      - name: Cart Service
+        url: /api/v1/cart/v3/api-docs
+      - name: Order Service
+        url: /api/v1/orders/v3/api-docs
+      - name: Payment Service
+        url: /api/v1/payments/v3/api-docs

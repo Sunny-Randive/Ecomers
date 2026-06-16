@@ -1,0 +1,637 @@
+# Config Server
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecom-config-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecom-config-server
+  template:
+    metadata:
+      labels:
+        app: ecom-config-server
+    spec:
+      containers:
+        - name: config-server
+          image: ecom-config-server:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8888
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: native
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8888
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecom-config-server
+spec:
+  ports:
+    - port: 8888
+  selector:
+    app: ecom-config-server
+---
+# Discovery Server
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecom-discovery-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecom-discovery-server
+  template:
+    metadata:
+      labels:
+        app: ecom-discovery-server
+    spec:
+      containers:
+        - name: discovery-server
+          image: ecom-discovery-server:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8761
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8761
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecom-discovery-server
+spec:
+  ports:
+    - port: 8761
+  selector:
+    app: ecom-discovery-server
+---
+# API Gateway
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecom-api-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecom-api-gateway
+  template:
+    metadata:
+      labels:
+        app: ecom-api-gateway
+    spec:
+      containers:
+        - name: api-gateway
+          image: ecom-api-gateway:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: CONFIG_SERVER_URL
+            - name: EUREKA_CLIENT_SERVICE-URL_DEFAULTZONE
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: EUREKA_SERVER_URL
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecom-api-gateway
+spec:
+  ports:
+    - port: 8080
+  selector:
+    app: ecom-api-gateway
+---
+# Auth Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecom-auth-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecom-auth-service
+  template:
+    metadata:
+      labels:
+        app: ecom-auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: ecom-auth-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: CONFIG_SERVER_URL
+            - name: EUREKA_CLIENT_SERVICE-URL_DEFAULTZONE
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: EUREKA_SERVER_URL
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: DB_HOST
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ecom-secrets
+                  key: db-password
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecom-auth-service
+spec:
+  ports:
+    - port: 8081
+  selector:
+    app: ecom-auth-service
+---
+# User Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecom-user-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecom-user-service
+  template:
+    metadata:
+      labels:
+        app: ecom-user-service
+    spec:
+      containers:
+        - name: user-service
+          image: ecom-user-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: CONFIG_SERVER_URL
+            - name: EUREKA_CLIENT_SERVICE-URL_DEFAULTZONE
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: EUREKA_SERVER_URL
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: DB_HOST
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ecom-secrets
+                  key: db-password
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecom-user-service
+spec:
+  ports:
+    - port: 8082
+  selector:
+    app: ecom-user-service
+---
+# Product Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecom-product-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ecom-product-service
+  template:
+    metadata:
+      labels:
+        app: ecom-product-service
+    spec:
+      containers:
+        - name: product-service
+          image: ecom-product-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8083
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: CONFIG_SERVER_URL
+            - name: EUREKA_CLIENT_SERVICE-URL_DEFAULTZONE
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: EUREKA_SERVER_URL
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: DB_HOST
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ecom-secrets
+                  key: db-password
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: REDIS_HOST
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecom-product-service
+spec:
+  ports:
+    - port: 8083
+  selector:
+    app: ecom-product-service
+---
+# Inventory Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecom-inventory-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecom-inventory-service
+  template:
+    metadata:
+      labels:
+        app: ecom-inventory-service
+    spec:
+      containers:
+        - name: inventory-service
+          image: ecom-inventory-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8084
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: CONFIG_SERVER_URL
+            - name: EUREKA_CLIENT_SERVICE-URL_DEFAULTZONE
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: EUREKA_SERVER_URL
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: DB_HOST
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ecom-secrets
+                  key: db-password
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: KAFKA_BOOTSTRAP_SERVERS
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecom-inventory-service
+spec:
+  ports:
+    - port: 8084
+  selector:
+    app: ecom-inventory-service
+---
+# Cart Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecom-cart-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecom-cart-service
+  template:
+    metadata:
+      labels:
+        app: ecom-cart-service
+    spec:
+      containers:
+        - name: cart-service
+          image: ecom-cart-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8085
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: CONFIG_SERVER_URL
+            - name: EUREKA_CLIENT_SERVICE-URL_DEFAULTZONE
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: EUREKA_SERVER_URL
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: DB_HOST
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ecom-secrets
+                  key: db-password
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecom-cart-service
+spec:
+  ports:
+    - port: 8085
+  selector:
+    app: ecom-cart-service
+---
+# Order Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecom-order-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ecom-order-service
+  template:
+    metadata:
+      labels:
+        app: ecom-order-service
+    spec:
+      containers:
+        - name: order-service
+          image: ecom-order-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8086
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: CONFIG_SERVER_URL
+            - name: EUREKA_CLIENT_SERVICE-URL_DEFAULTZONE
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: EUREKA_SERVER_URL
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: DB_HOST
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ecom-secrets
+                  key: db-password
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: KAFKA_BOOTSTRAP_SERVERS
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecom-order-service
+spec:
+  ports:
+    - port: 8086
+  selector:
+    app: ecom-order-service
+---
+# Payment Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecom-payment-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecom-payment-service
+  template:
+    metadata:
+      labels:
+        app: ecom-payment-service
+    spec:
+      containers:
+        - name: payment-service
+          image: ecom-payment-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8087
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: CONFIG_SERVER_URL
+            - name: EUREKA_CLIENT_SERVICE-URL_DEFAULTZONE
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: EUREKA_SERVER_URL
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: DB_HOST
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ecom-secrets
+                  key: db-password
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: KAFKA_BOOTSTRAP_SERVERS
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecom-payment-service
+spec:
+  ports:
+    - port: 8087
+  selector:
+    app: ecom-payment-service
+---
+# Notification Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecom-notification-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecom-notification-service
+  template:
+    metadata:
+      labels:
+        app: ecom-notification-service
+    spec:
+      containers:
+        - name: notification-service
+          image: ecom-notification-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8088
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: CONFIG_SERVER_URL
+            - name: EUREKA_CLIENT_SERVICE-URL_DEFAULTZONE
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: EUREKA_SERVER_URL
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: KAFKA_BOOTSTRAP_SERVERS
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecom-notification-service
+spec:
+  ports:
+    - port: 8088
+  selector:
+    app: ecom-notification-service

@@ -1,0 +1,85 @@
+name: E-Commerce Platform CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build with Maven (Compile and Test)
+        run: mvn clean test
+
+  docker-build-and-push:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: actions/setup-docker-actions@v2
+        
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Compile JARs with Maven (No Tests)
+        run: mvn clean package -DskipTests
+
+      - name: Build and Push Microservices Images
+        run: |
+          services=("config-server" "discovery-server" "api-gateway" "auth-service" "user-service" "product-service" "inventory-service" "cart-service" "order-service" "payment-service" "notification-service")
+          for service in "${services[@]}"; do
+            echo "Building and pushing image for $service..."
+            docker build -t ${{ secrets.DOCKER_USERNAME }}/ecom-$service:latest ./$service
+            docker push ${{ secrets.DOCKER_USERNAME }}/ecom-$service:latest
+          done
+
+  deploy-to-k8s:
+    needs: docker-build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure Kubernetes Context
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_DATA }}" | base64 -d > ~/.kube/config
+
+      - name: Apply Infrastructure Manifests
+        run: kubectl apply -f k8s/infrastructure.yaml
+
+      - name: Apply Microservices Manifests
+        run: kubectl apply -f k8s/microservices.yaml
+
+      - name: Apply Ingress and HPA Manifests
+        run: kubectl apply -f k8s/ingress-hpa.yaml
+
+      - name: Trigger Rolling Update
+        run: |
+          deployments=("ecom-config-server" "ecom-discovery-server" "ecom-api-gateway" "ecom-auth-service" "ecom-user-service" "ecom-product-service" "ecom-inventory-service" "ecom-cart-service" "ecom-order-service" "ecom-payment-service" "ecom-notification-service")
+          for deploy in "${deployments[@]}"; do
+            kubectl rollout restart deployment/$deploy
+          done
