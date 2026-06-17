@@ -265,7 +265,7 @@ export default function CheckoutModal({ isOpen, onClose, cart, onOrderSuccess })
             borderTop: '1px solid hsl(var(--border))',
             paddingTop: '20px',
             display: 'flex',
-            justify-content: 'space-between',
+            justifyContent: 'space-between',
             alignItems: 'center'
           }}>
             <div>
