@@ -402,6 +402,19 @@ services:
     networks:
       - ecom-network
 
+  # Frontend Service
+  frontend:
+    build:
+      context: ./ecom-frontend
+      dockerfile: Dockerfile
+    container_name: ecom-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - ecom-network
+
 volumes:
   pgdata:
   redisdata:

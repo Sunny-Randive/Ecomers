@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Base URL for the live GCP API Gateway
-const API_BASE_URL = 'http://34.47.52.111';
+// Base URL for the live GCP API Gateway (fallback to current host on port 8080 if not set)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:8080`;
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
