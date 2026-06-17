@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { productService, cartService } from '../services/api';
-import { Search, ShoppingCart, Sparkles } from 'lucide-react';
+import { Search, ShoppingCart, Sparkles, X } from 'lucide-react';
 
 export default function Home({ onAddToCart, user }) {
   const [products, setProducts] = useState([]);
@@ -11,6 +11,26 @@ export default function Home({ onAddToCart, user }) {
   const [direction, setDirection] = useState('asc');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Modal State
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [productInventory, setProductInventory] = useState(null);
+  const [loadingInventory, setLoadingInventory] = useState(false);
+
+  const handleProductCardClick = async (product) => {
+    setSelectedProduct(product);
+    setProductInventory(null);
+    setLoadingInventory(true);
+    try {
+      const inv = await productService.getInventory(product.id);
+      setProductInventory(inv.availableQuantity);
+    } catch (err) {
+      console.error('Failed to load inventory for product:', err);
+      setProductInventory(0);
+    } finally {
+      setLoadingInventory(false);
+    }
+  };
   
   // Pagination
   const [page, setPage] = useState(0);
@@ -194,7 +214,7 @@ export default function Home({ onAddToCart, user }) {
               const primaryImage = product.images?.find((img) => img.isPrimary) || product.images?.[0];
               
               return (
-                <div key={product.id} className="product-card">
+                <div key={product.id} className="product-card" onClick={() => handleProductCardClick(product)} style={{ cursor: 'pointer' }}>
                   <div className="product-image-container">
                     {primaryImage ? (
                       <img
@@ -225,7 +245,10 @@ export default function Home({ onAddToCart, user }) {
                       <button
                         className="btn btn-secondary"
                         style={{ padding: '8px 12px', borderRadius: '8px' }}
-                        onClick={() => handleAddToCartClick(product)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToCartClick(product);
+                        }}
                       >
                         <ShoppingCart size={16} />
                         Add
@@ -262,6 +285,92 @@ export default function Home({ onAddToCart, user }) {
             </div>
           )}
         </>
+      )}
+
+      {/* Product Details Modal */}
+      {selectedProduct && (
+        <div className="modal-overlay" onClick={() => setSelectedProduct(null)}>
+          <div className="modal-content glass" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 className="modal-title">Product Details</h2>
+              <button className="close-btn" onClick={() => setSelectedProduct(null)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '24px', color: 'white' }}>
+              {/* Product Image */}
+              <div style={{
+                borderRadius: '12px',
+                overflow: 'hidden',
+                border: '1px solid rgba(255,255,255,0.1)',
+                background: 'rgba(255,255,255,0.02)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '200px'
+              }}>
+                {selectedProduct.images?.[0]?.imageUrl || selectedProduct.images?.find(img => img.isPrimary)?.imageUrl ? (
+                  <img
+                    src={selectedProduct.images?.[0]?.imageUrl || selectedProduct.images?.find(img => img.isPrimary)?.imageUrl}
+                    alt={selectedProduct.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <span style={{ color: 'hsl(var(--text-muted))' }}>No Image</span>
+                )}
+              </div>
+
+              {/* Product Info */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <span className="product-category" style={{ alignSelf: 'flex-start' }}>
+                  {selectedProduct.categoryName || 'General'}
+                </span>
+                <h3 style={{ fontSize: '22px', fontWeight: '700', margin: '0' }}>{selectedProduct.name}</h3>
+                
+                <p style={{ 
+                  color: 'hsl(var(--text-muted))', 
+                  fontSize: '14px', 
+                  lineHeight: '1.6', 
+                  margin: '0',
+                  maxHeight: '120px',
+                  overflowY: 'auto'
+                }}>
+                  {selectedProduct.description || 'No description available for this premium product.'}
+                </p>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '15px' }}>
+                  <div>
+                    <span style={{ fontSize: '12px', color: 'hsl(var(--text-muted))' }}>Price:</span>
+                    <div style={{ fontSize: '24px', fontWeight: '700', color: 'hsl(var(--accent))' }}>
+                      ${selectedProduct.price ? selectedProduct.price.toFixed(2) : '0.00'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <span style={{ fontSize: '12px', color: 'hsl(var(--text-muted))' }}>Stock Status:</span>
+                    <div style={{ fontSize: '14px', fontWeight: '600', color: (productInventory !== null && productInventory > 0) ? '#10b981' : '#ef4444', marginTop: '4px' }}>
+                      {loadingInventory ? 'Checking...' : productInventory > 0 ? `${productInventory} Available` : 'Out of Stock'}
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  className="btn btn-primary"
+                  style={{ width: '100%', marginTop: '15px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+                  onClick={() => {
+                    handleAddToCartClick(selectedProduct);
+                    setSelectedProduct(null);
+                  }}
+                  disabled={!loadingInventory && productInventory <= 0}
+                >
+                  <ShoppingCart size={18} />
+                  Add to Cart
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
