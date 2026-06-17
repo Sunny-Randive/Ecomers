@@ -635,3 +635,43 @@ spec:
     - port: 8088
   selector:
     app: ecom-notification-service
+---
+# Frontend Service and Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecom-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecom-frontend
+  template:
+    metadata:
+      labels:
+        app: ecom-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: ecom-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          resources:
+            limits:
+              cpu: "300m"
+              memory: "256Mi"
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecom-frontend
+spec:
+  ports:
+    - port: 80
+  selector:
+    app: ecom-frontend
+

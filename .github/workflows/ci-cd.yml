@@ -43,6 +43,12 @@ jobs:
       - name: Compile JARs with Maven (No Tests)
         run: mvn clean package -DskipTests
 
+      - name: Build and Push Frontend Image
+        run: |
+          echo "Building and pushing image for frontend..."
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/ecom-frontend:latest ./ecom-frontend
+          docker push ${{ secrets.DOCKER_USERNAME }}/ecom-frontend:latest
+
       - name: Build and Push Microservices Images
         run: |
           services=("config-server" "discovery-server" "api-gateway" "auth-service" "user-service" "product-service" "inventory-service" "cart-service" "order-service" "payment-service" "notification-service")
@@ -79,7 +85,7 @@ jobs:
 
       - name: Trigger Rolling Update
         run: |
-          deployments=("ecom-config-server" "ecom-discovery-server" "ecom-api-gateway" "ecom-auth-service" "ecom-user-service" "ecom-product-service" "ecom-inventory-service" "ecom-cart-service" "ecom-order-service" "ecom-payment-service" "ecom-notification-service")
+          deployments=("ecom-config-server" "ecom-discovery-server" "ecom-api-gateway" "ecom-auth-service" "ecom-user-service" "ecom-product-service" "ecom-inventory-service" "ecom-cart-service" "ecom-order-service" "ecom-payment-service" "ecom-notification-service" "ecom-frontend")
           for deploy in "${deployments[@]}"; do
             kubectl rollout restart deployment/$deploy
           done
