@@ -7,7 +7,7 @@ import Orders from './pages/Orders';
 import SellerDashboard from './pages/SellerDashboard';
 import CartDrawer from './components/CartDrawer';
 import CheckoutModal from './components/CheckoutModal';
-import { authService, cartService } from './services/api';
+import { authService, cartService, productService } from './services/api';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -33,10 +33,45 @@ export default function App() {
     }
   }, [user]);
 
+  const enrichCart = async (rawCart) => {
+    if (!rawCart || !rawCart.items || rawCart.items.length === 0) {
+      return { items: [], totalPrice: 0 };
+    }
+    const enrichedItems = await Promise.all(
+      rawCart.items.map(async (item) => {
+        try {
+          const product = await productService.getProductById(item.productId);
+          const primaryImage = product.images?.find((img) => img.isPrimary) || product.images?.[0];
+          return {
+            ...item,
+            productName: product.name,
+            price: product.price,
+            productPrimaryImage: primaryImage?.imageUrl || ''
+          };
+        } catch (err) {
+          console.error(`Failed to fetch product details for ${item.productId}:`, err);
+          return {
+            ...item,
+            productName: 'Unknown Product',
+            price: 0,
+            productPrimaryImage: ''
+          };
+        }
+      })
+    );
+    const totalPrice = enrichedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    return {
+      ...rawCart,
+      items: enrichedItems,
+      totalPrice
+    };
+  };
+
   const fetchCart = async () => {
     try {
       const data = await cartService.getCart();
-      setCart(data);
+      const enriched = await enrichCart(data);
+      setCart(enriched);
     } catch (err) {
       console.error('Error fetching cart:', err);
     }
@@ -59,7 +94,8 @@ export default function App() {
     if (!user) return;
     try {
       const updatedCart = await cartService.addItemToCart(productId, quantity);
-      setCart(updatedCart);
+      const enriched = await enrichCart(updatedCart);
+      setCart(enriched);
       setIsCartOpen(true); // Auto-open cart drawer on add
     } catch (err) {
       console.error('Error adding to cart:', err);
@@ -69,7 +105,8 @@ export default function App() {
   const handleUpdateQuantity = async (itemId, quantity) => {
     try {
       const updatedCart = await cartService.updateQuantity(itemId, quantity);
-      setCart(updatedCart);
+      const enriched = await enrichCart(updatedCart);
+      setCart(enriched);
     } catch (err) {
       console.error('Error updating quantity:', err);
     }
@@ -78,7 +115,8 @@ export default function App() {
   const handleRemoveItem = async (itemId) => {
     try {
       const updatedCart = await cartService.removeItemFromCart(itemId);
-      setCart(updatedCart);
+      const enriched = await enrichCart(updatedCart);
+      setCart(enriched);
     } catch (err) {
       console.error('Error removing item from cart:', err);
     }
