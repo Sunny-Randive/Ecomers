@@ -74,43 +74,23 @@ jobs:
             fi
           done
 
-  deploy-to-k8s:
-    needs: docker-build-and-push
+  deploy-to-vm:
+    needs: build-and-test
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     env:
-      KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA }}
+      VM_IP: ${{ secrets.VM_IP }}
+      VM_USER: ${{ secrets.VM_USER }}
+      VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
     steps:
-      - name: Checkout Code
-        if: ${{ env.KUBECONFIG_DATA != '' }}
-        uses: actions/checkout@v4
-
-      - name: Set up Kubectl
-        if: ${{ env.KUBECONFIG_DATA != '' }}
-        uses: azure/setup-kubectl@v4
-
-      - name: Configure Kubernetes Context
-        if: ${{ env.KUBECONFIG_DATA != '' }}
-        run: |
-          mkdir -p ~/.kube
-          echo "$KUBECONFIG_DATA" | base64 -d > ~/.kube/config
-
-      - name: Apply Infrastructure Manifests
-        if: ${{ env.KUBECONFIG_DATA != '' }}
-        run: kubectl apply -f k8s/infrastructure.yaml
-
-      - name: Apply Microservices Manifests
-        if: ${{ env.KUBECONFIG_DATA != '' }}
-        run: kubectl apply -f k8s/microservices.yaml
-
-      - name: Apply Ingress and HPA Manifests
-        if: ${{ env.KUBECONFIG_DATA != '' }}
-        run: kubectl apply -f k8s/ingress-hpa.yaml
-
-      - name: Trigger Rolling Update
-        if: ${{ env.KUBECONFIG_DATA != '' }}
-        run: |
-          deployments=("ecom-config-server" "ecom-discovery-server" "ecom-api-gateway" "ecom-auth-service" "ecom-user-service" "ecom-product-service" "ecom-inventory-service" "ecom-cart-service" "ecom-order-service" "ecom-payment-service" "ecom-notification-service" "ecom-frontend")
-          for deploy in "${deployments[@]}"; do
-            kubectl rollout restart deployment/$deploy
-          done
+      - name: SSH and Deploy to VM
+        if: ${{ env.VM_IP != '' && env.VM_USER != '' && env.VM_SSH_KEY != '' }}
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_IP }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd ~/Ecomers
+            git pull origin main
+            sudo docker compose up -d --build
