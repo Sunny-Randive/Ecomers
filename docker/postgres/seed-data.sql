@@ -38,3 +38,26 @@ INSERT INTO inventories (product_id, available_quantity, reserved_quantity) VALU
 ('f2a2b3c4-d5e6-7a8b-9c0d-1e2f3a4b5c6d', 20, 0),
 ('f3a2b3c4-d5e6-7a8b-9c0d-1e2f3a4b5c6d', 100, 0),
 ('f4a2b3c4-d5e6-7a8b-9c0d-1e2f3a4b5c6d', 15, 0);
+
+-- Connect to ecom_auth database
+\c ecom_auth;
+
+-- Clear existing data
+TRUNCATE TABLE user_roles CASCADE;
+TRUNCATE TABLE refresh_tokens CASCADE;
+TRUNCATE TABLE users CASCADE;
+TRUNCATE TABLE roles CASCADE;
+
+-- Seed Roles
+INSERT INTO roles (id, name) VALUES
+(1, 'ROLE_USER'),
+(2, 'ROLE_SELLER');
+
+-- Seed Users (password is "admin123")
+INSERT INTO users (id, username, email, password, enabled, created_at) VALUES
+('b3a987d6-3e4b-4f9e-8c5d-2a1f8b4c3d2e', 'admin_seller', 'seller@ecom.com', '$2a$10$9/Ch9Rh9DYR4S/6V2GXfcOX4Ov.8rdMScJIv4ejyNvsgdLeKovt6W', TRUE, NOW());
+
+-- Map admin_seller to ROLE_SELLER and ROLE_USER
+INSERT INTO user_roles (user_id, role_id) VALUES
+('b3a987d6-3e4b-4f9e-8c5d-2a1f8b4c3d2e', 1),
+('b3a987d6-3e4b-4f9e-8c5d-2a1f8b4c3d2e', 2);
