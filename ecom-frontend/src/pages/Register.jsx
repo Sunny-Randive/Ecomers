@@ -5,6 +5,7 @@ export default function Register({ navigateToLogin }) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('ROLE_USER');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,7 +26,7 @@ export default function Register({ navigateToLogin }) {
     setSuccess('');
 
     try {
-      await authService.register(username, email, password);
+      await authService.register(username, email, password, [role]);
       setSuccess('Registration successful! Redirecting to login page...');
       setTimeout(() => {
         navigateToLogin();
@@ -115,10 +116,33 @@ export default function Register({ navigateToLogin }) {
             />
           </div>
 
+          <div className="form-group">
+            <label className="form-label">Account Type</label>
+            <select
+              className="form-input"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              disabled={loading}
+              style={{
+                background: '#11131e',
+                color: 'white',
+                cursor: 'pointer',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '8px',
+                padding: '10px 14px',
+                width: '100%',
+                boxSizing: 'border-box'
+              }}
+            >
+              <option value="ROLE_USER">Customer (Buy Products)</option>
+              <option value="ROLE_SELLER">Seller (List & Manage Products)</option>
+            </select>
+          </div>
+
           <button
             type="submit"
             className="btn btn-primary"
-            style={{ width: '100%', marginTop: '10px' }}
+            style={{ width: '100%', marginTop: '15px' }}
             disabled={loading}
           >
             {loading ? 'Creating Account...' : 'Sign Up'}

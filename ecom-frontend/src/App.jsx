@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Orders from './pages/Orders';
+import SellerDashboard from './pages/SellerDashboard';
 import CartDrawer from './components/CartDrawer';
 import CheckoutModal from './components/CheckoutModal';
 import { authService, cartService } from './services/api';
@@ -45,7 +46,8 @@ export default function App() {
     setUser({
       token: loginData.token,
       username: loginData.username,
-      userId: loginData.userId
+      userId: loginData.userId,
+      roles: loginData.roles || []
     });
   };
 
@@ -116,6 +118,8 @@ export default function App() {
         return <Register navigateToLogin={() => setCurrentPage('login')} />;
       case 'orders':
         return <Orders />;
+      case 'seller':
+        return <SellerDashboard />;
       default:
         return <Home onAddToCart={handleAddToCart} user={user} />;
     }

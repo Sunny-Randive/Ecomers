@@ -47,6 +47,15 @@ export default function Header({
               My Orders
             </a>
           )}
+          {user?.roles?.includes('ROLE_SELLER') && (
+            <a
+              href="#"
+              className={`nav-link ${currentPage === 'seller' ? 'active' : ''}`}
+              onClick={(e) => { e.preventDefault(); onNavigate('seller'); }}
+            >
+              Seller Dashboard
+            </a>
+          )}
         </nav>
 
         <div className="nav-actions">
@@ -72,6 +81,20 @@ export default function Header({
                 
                 {showProfileDropdown && (
                   <div className="profile-dropdown glass">
+                    {user?.roles?.includes('ROLE_SELLER') && (
+                      <a 
+                        href="#" 
+                        className="dropdown-item"
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setShowProfileDropdown(false);
+                          onNavigate('seller');
+                        }}
+                      >
+                        <Package size={16} /> Seller Dashboard
+                      </a>
+                    )}
                     <a 
                       href="#" 
                       className="dropdown-item"

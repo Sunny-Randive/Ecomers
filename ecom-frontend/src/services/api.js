@@ -32,12 +32,13 @@ export const authService = {
       localStorage.setItem('refreshToken', response.data.refreshToken);
       localStorage.setItem('userId', response.data.userId);
       localStorage.setItem('username', response.data.username);
+      localStorage.setItem('roles', JSON.stringify(response.data.roles || []));
     }
     return response.data;
   },
   
-  register: async (username, email, password) => {
-    const response = await apiClient.post('/api/v1/auth/register', { username, email, password });
+  register: async (username, email, password, roles = ['ROLE_USER']) => {
+    const response = await apiClient.post('/api/v1/auth/register', { username, email, password, roles });
     return response.data;
   },
 
@@ -46,21 +47,24 @@ export const authService = {
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('userId');
     localStorage.removeItem('username');
+    localStorage.removeItem('roles');
   },
 
   getCurrentUser: () => {
     const token = localStorage.getItem('token');
     const username = localStorage.getItem('username');
     const userId = localStorage.getItem('userId');
+    const rolesStr = localStorage.getItem('roles');
+    const roles = rolesStr ? JSON.parse(rolesStr) : [];
     if (token && username) {
-      return { token, username, userId };
+      return { token, username, userId, roles };
     }
     return null;
   }
 };
 
 export const productService = {
-  getProducts: async (search = '', categoryId = null, page = 0, size = 10) => {
+  getProducts: async (search = '', categoryId = null, page = 0, size = 50) => {
     const params = { page, size };
     if (search) params.search = search;
     if (categoryId) params.categoryId = categoryId;
@@ -75,6 +79,28 @@ export const productService = {
 
   getCategories: async () => {
     const response = await apiClient.get('/api/v1/products/categories');
+    return response.data;
+  },
+
+  createProduct: async (productDto) => {
+    const response = await apiClient.post('/api/v1/products', productDto);
+    return response.data;
+  },
+
+  addProductImage: async (productId, imageUrl) => {
+    const response = await apiClient.post(`/api/v1/products/${productId}/images`, { imageUrl, isPrimary: true });
+    return response.data;
+  },
+
+  updateInventory: async (productId, quantity) => {
+    const response = await apiClient.put(`/api/v1/inventory/${productId}`, null, {
+      params: { quantity }
+    });
+    return response.data;
+  },
+
+  getInventory: async (productId) => {
+    const response = await apiClient.get(`/api/v1/inventory/${productId}`);
     return response.data;
   }
 };
