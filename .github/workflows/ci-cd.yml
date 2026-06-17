@@ -27,6 +27,9 @@ jobs:
     needs: build-and-test
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -35,21 +38,21 @@ jobs:
         uses: docker/setup-buildx-action@v3
         
       - name: Log in to Docker Hub
-        if: ${{ secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PASSWORD != '' }}
+        if: ${{ env.DOCKER_USERNAME != '' && env.DOCKER_PASSWORD != '' }}
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ env.DOCKER_PASSWORD }}
 
       - name: Compile JARs with Maven (No Tests)
         run: mvn clean package -DskipTests
 
       - name: Build and Push Frontend Image
         run: |
-          if [ "${{ secrets.DOCKER_USERNAME }}" != "" ]; then
+          if [ "$DOCKER_USERNAME" != "" ]; then
             echo "Building and pushing image for frontend..."
-            docker build -t ${{ secrets.DOCKER_USERNAME }}/ecom-frontend:latest ./ecom-frontend
-            docker push ${{ secrets.DOCKER_USERNAME }}/ecom-frontend:latest
+            docker build -t "$DOCKER_USERNAME/ecom-frontend:latest" ./ecom-frontend
+            docker push "$DOCKER_USERNAME/ecom-frontend:latest"
           else
             echo "Building local image for frontend..."
             docker build -t ecom-frontend:latest ./ecom-frontend
@@ -60,10 +63,10 @@ jobs:
         run: |
           services=("config-server" "discovery-server" "api-gateway" "auth-service" "user-service" "product-service" "inventory-service" "cart-service" "order-service" "payment-service" "notification-service")
           for service in "${services[@]}"; do
-            if [ "${{ secrets.DOCKER_USERNAME }}" != "" ]; then
+            if [ "$DOCKER_USERNAME" != "" ]; then
               echo "Building and pushing image for $service..."
-              docker build -t ${{ secrets.DOCKER_USERNAME }}/ecom-$service:latest ./$service
-              docker push ${{ secrets.DOCKER_USERNAME }}/ecom-$service:latest
+              docker build -t "$DOCKER_USERNAME/ecom-$service:latest" ./$service
+              docker push "$DOCKER_USERNAME/ecom-$service:latest"
             else
               echo "Building local image for $service..."
               docker build -t ecom-$service:latest ./$service
@@ -74,29 +77,38 @@ jobs:
   deploy-to-k8s:
     needs: docker-build-and-push
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.KUBECONFIG_DATA != ''
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA }}
     steps:
       - name: Checkout Code
+        if: ${{ env.KUBECONFIG_DATA != '' }}
         uses: actions/checkout@v4
 
       - name: Set up Kubectl
+        if: ${{ env.KUBECONFIG_DATA != '' }}
         uses: azure/setup-kubectl@v4
 
       - name: Configure Kubernetes Context
+        if: ${{ env.KUBECONFIG_DATA != '' }}
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG_DATA }}" | base64 -d > ~/.kube/config
+          echo "$KUBECONFIG_DATA" | base64 -d > ~/.kube/config
 
       - name: Apply Infrastructure Manifests
+        if: ${{ env.KUBECONFIG_DATA != '' }}
         run: kubectl apply -f k8s/infrastructure.yaml
 
       - name: Apply Microservices Manifests
+        if: ${{ env.KUBECONFIG_DATA != '' }}
         run: kubectl apply -f k8s/microservices.yaml
 
       - name: Apply Ingress and HPA Manifests
+        if: ${{ env.KUBECONFIG_DATA != '' }}
         run: kubectl apply -f k8s/ingress-hpa.yaml
 
       - name: Trigger Rolling Update
+        if: ${{ env.KUBECONFIG_DATA != '' }}
         run: |
           deployments=("ecom-config-server" "ecom-discovery-server" "ecom-api-gateway" "ecom-auth-service" "ecom-user-service" "ecom-product-service" "ecom-inventory-service" "ecom-cart-service" "ecom-order-service" "ecom-payment-service" "ecom-notification-service" "ecom-frontend")
           for deploy in "${deployments[@]}"; do
