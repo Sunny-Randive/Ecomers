@@ -409,7 +409,7 @@ services:
       dockerfile: Dockerfile
     container_name: ecom-frontend
     ports:
-      - "80:80"
+      - "8089:80"
     depends_on:
       - api-gateway
     networks:
