@@ -21,6 +21,9 @@ export default function App() {
     const currentUser = authService.getCurrentUser();
     if (currentUser) {
       setUser(currentUser);
+      if (currentUser.roles?.includes('ROLE_SELLER')) {
+        setCurrentPage('seller');
+      }
     }
   }, []);
 
@@ -84,6 +87,11 @@ export default function App() {
       userId: loginData.userId,
       roles: loginData.roles || []
     });
+    if (loginData.roles?.includes('ROLE_SELLER')) {
+      setCurrentPage('seller');
+    } else {
+      setCurrentPage('home');
+    }
   };
 
   const handleLogout = () => {
@@ -143,6 +151,9 @@ export default function App() {
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
+        if (user?.roles?.includes('ROLE_SELLER')) {
+          return <SellerDashboard />;
+        }
         return <Home onAddToCart={handleAddToCart} user={user} />;
       case 'login':
         return (

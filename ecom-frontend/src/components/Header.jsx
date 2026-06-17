@@ -25,20 +25,25 @@ export default function Header({
         <a 
           href="#" 
           className="logo" 
-          onClick={(e) => { e.preventDefault(); onNavigate('home'); }}
+          onClick={(e) => { 
+            e.preventDefault(); 
+            onNavigate(user?.roles?.includes('ROLE_SELLER') ? 'seller' : 'home'); 
+          }}
         >
           E-Comers
         </a>
 
         <nav className="nav-links">
-          <a
-            href="#"
-            className={`nav-link ${currentPage === 'home' ? 'active' : ''}`}
-            onClick={(e) => { e.preventDefault(); onNavigate('home'); }}
-          >
-            Shop
-          </a>
-          {user && (
+          {(!user || !user.roles?.includes('ROLE_SELLER')) && (
+            <a
+              href="#"
+              className={`nav-link ${currentPage === 'home' ? 'active' : ''}`}
+              onClick={(e) => { e.preventDefault(); onNavigate('home'); }}
+            >
+              Shop
+            </a>
+          )}
+          {user && !user.roles?.includes('ROLE_SELLER') && (
             <a
               href="#"
               className={`nav-link ${currentPage === 'orders' ? 'active' : ''}`}
@@ -60,12 +65,15 @@ export default function Header({
 
         <div className="nav-actions">
           {/* Cart Icon */}
-          <button className="cart-icon-btn" onClick={onOpenCart}>
-            <ShoppingCart size={22} color={cartItemCount > 0 ? 'hsl(var(--accent))' : 'hsl(var(--text-muted))'} />
-            {cartItemCount > 0 && (
-              <span className="cart-badge">{cartItemCount}</span>
-            )}
-          </button>
+          {/* Cart Icon */}
+          {(!user || !user.roles?.includes('ROLE_SELLER')) && (
+            <button className="cart-icon-btn" onClick={onOpenCart}>
+              <ShoppingCart size={22} color={cartItemCount > 0 ? 'hsl(var(--accent))' : 'hsl(var(--text-muted))'} />
+              {cartItemCount > 0 && (
+                <span className="cart-badge">{cartItemCount}</span>
+              )}
+            </button>
+          )}
 
           {/* User Profile */}
           <div className="user-profile">
@@ -95,18 +103,20 @@ export default function Header({
                         <Package size={16} /> Seller Dashboard
                       </a>
                     )}
-                    <a 
-                      href="#" 
-                      className="dropdown-item"
-                      style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setShowProfileDropdown(false);
-                        onNavigate('orders');
-                      }}
-                    >
-                      <Package size={16} /> My Orders
-                    </a>
+                    {(!user || !user.roles?.includes('ROLE_SELLER')) && (
+                      <a 
+                        href="#" 
+                        className="dropdown-item"
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setShowProfileDropdown(false);
+                          onNavigate('orders');
+                        }}
+                      >
+                        <Package size={16} /> My Orders
+                      </a>
+                    )}
                     <a 
                       href="#" 
                       className="dropdown-item"
