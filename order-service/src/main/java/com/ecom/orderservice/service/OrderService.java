@@ -131,6 +131,25 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<OrderResponseDto> getAllOrders() {
+        List<Order> orders = orderRepository.findAll();
+        return orders.stream()
+                .map(this::mapToResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public OrderResponseDto updateOrderStatus(UUID orderId, String status) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+        order.setStatus(status.toUpperCase());
+        Order savedOrder = orderRepository.save(order);
+        log.info("Updated status of order {} to {}", orderId, status);
+        return mapToResponseDto(savedOrder);
+    }
+
+
     @Transactional
     public OrderResponseDto cancelOrder(UUID userId, UUID orderId) {
         Order order = orderRepository.findById(orderId)

@@ -37,6 +37,26 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getUserOrders(UUID.fromString(userId)));
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<OrderResponseDto>> getAllOrders(
+            @RequestHeader(value = "X-User-Roles", required = false) String userRoles) {
+        if (userRoles == null || !userRoles.contains("ROLE_SELLER")) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+        }
+        return ResponseEntity.ok(orderService.getAllOrders());
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<OrderResponseDto> updateOrderStatus(
+            @RequestHeader(value = "X-User-Roles", required = false) String userRoles,
+            @PathVariable("id") UUID orderId,
+            @RequestParam("status") String status) {
+        if (userRoles == null || !userRoles.contains("ROLE_SELLER")) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+        }
+        return ResponseEntity.ok(orderService.updateOrderStatus(orderId, status));
+    }
+
     @PostMapping("/{id}/cancel")
     public ResponseEntity<OrderResponseDto> cancelOrder(
             @RequestHeader("X-User-Id") String userId,

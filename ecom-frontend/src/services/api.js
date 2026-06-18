@@ -157,6 +157,11 @@ export const orderService = {
     return response.data;
   },
 
+  getAllOrders: async () => {
+    const response = await apiClient.get('/api/v1/orders/all');
+    return response.data;
+  },
+
   getOrderDetails: async (orderId) => {
     const response = await apiClient.get(`/api/v1/orders/${orderId}`);
     return response.data;
@@ -172,6 +177,13 @@ export const orderService = {
 
   cancelOrder: async (orderId) => {
     const response = await apiClient.post(`/api/v1/orders/${orderId}/cancel`);
+    return response.data;
+  },
+
+  updateOrderStatus: async (orderId, status) => {
+    const response = await apiClient.put(`/api/v1/orders/${orderId}/status`, null, {
+      params: { status }
+    });
     return response.data;
   }
 };
