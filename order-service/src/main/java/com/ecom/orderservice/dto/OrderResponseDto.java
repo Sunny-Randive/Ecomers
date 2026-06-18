@@ -21,6 +21,8 @@ public class OrderResponseDto {
     private String status;
     private List<OrderItemResponseDto> items;
     private LocalDateTime createdAt;
+    private LocalDateTime deliveredAt;
+
 
     @Data
     @Builder

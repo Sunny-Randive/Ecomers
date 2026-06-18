@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -143,7 +144,11 @@ public class OrderService {
     public OrderResponseDto updateOrderStatus(UUID orderId, String status) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found"));
-        order.setStatus(status.toUpperCase());
+        String newStatus = status.toUpperCase();
+        order.setStatus(newStatus);
+        if ("DELIVERED".equals(newStatus)) {
+            order.setDeliveredAt(LocalDateTime.now());
+        }
         Order savedOrder = orderRepository.save(order);
         log.info("Updated status of order {} to {}", orderId, status);
         return mapToResponseDto(savedOrder);
@@ -196,6 +201,7 @@ public class OrderService {
                 .status(order.getStatus())
                 .items(itemDtos)
                 .createdAt(order.getCreatedAt())
+                .deliveredAt(order.getDeliveredAt())
                 .build();
     }
 }
