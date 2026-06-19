@@ -94,3 +94,6 @@ jobs:
             cd ~/Ecomers
             git pull origin main
             sudo docker compose up -d --build
+            sleep 15
+            sudo docker compose ps
+            sudo docker compose logs order-service
