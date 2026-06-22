@@ -31,6 +31,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProductImageRepository productImageRepository;
+    private final org.springframework.kafka.core.KafkaTemplate<String, Object> kafkaTemplate;
 
     @Transactional(readOnly = true)
     @Cacheable(value = "products", key = "#id", unless = "#result == null")
@@ -81,6 +82,13 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));
         productRepository.delete(product);
+        
+        // Publish event to notify other services (like cart-service) that the product was deleted
+        com.ecom.common.event.ProductDeletedEvent event = com.ecom.common.event.ProductDeletedEvent.builder()
+                .productId(id)
+                .build();
+        kafkaTemplate.send("product-events", id.toString(), event);
+        log.info("Published ProductDeletedEvent for productId: {}", id);
     }
 
     @Transactional(readOnly = true)
