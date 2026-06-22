@@ -24,6 +24,42 @@ apiClient.interceptors.request.use(
   }
 );
 
+// Automatically handle 401 Unauthorized errors (expired token)
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // If the error is 401 and we haven't already retried
+    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      const refreshToken = localStorage.getItem('refreshToken');
+      
+      if (refreshToken) {
+        try {
+          const response = await axios.post(`${API_BASE_URL}/api/v1/auth/refresh`, { refreshToken });
+          if (response.data && response.data.token) {
+            localStorage.setItem('token', response.data.token);
+            if (response.data.refreshToken) {
+              localStorage.setItem('refreshToken', response.data.refreshToken);
+            }
+            originalRequest.headers.Authorization = `Bearer ${response.data.token}`;
+            return apiClient(originalRequest);
+          }
+        } catch (refreshError) {
+          authService.logout();
+          window.location.href = '/'; // Or trigger a login modal
+          return Promise.reject(refreshError);
+        }
+      } else {
+        authService.logout();
+        window.location.href = '/';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const authService = {
   login: async (username, password) => {
     const response = await apiClient.post('/api/v1/auth/login', { username, password });
