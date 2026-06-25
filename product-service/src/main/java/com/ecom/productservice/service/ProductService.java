@@ -51,6 +51,7 @@ public class ProductService {
                 .name(dto.getName())
                 .description(dto.getDescription())
                 .price(dto.getPrice())
+                .discount(dto.getDiscount() != null ? dto.getDiscount() : java.math.BigDecimal.ZERO)
                 .category(category)
                 .build();
 
@@ -70,6 +71,7 @@ public class ProductService {
         product.setName(dto.getName());
         product.setDescription(dto.getDescription());
         product.setPrice(dto.getPrice());
+        product.setDiscount(dto.getDiscount() != null ? dto.getDiscount() : java.math.BigDecimal.ZERO);
         product.setCategory(category);
 
         Product updatedProduct = productRepository.save(product);
@@ -158,11 +160,20 @@ public class ProductService {
                 .map(this::mapToImageDto)
                 .collect(Collectors.toList());
 
+        java.math.BigDecimal discount = product.getDiscount() != null ? product.getDiscount() : java.math.BigDecimal.ZERO;
+        java.math.BigDecimal discountedPrice = product.getPrice();
+        if (discount.compareTo(java.math.BigDecimal.ZERO) > 0) {
+            java.math.BigDecimal factor = java.math.BigDecimal.ONE.subtract(discount.divide(java.math.BigDecimal.valueOf(100)));
+            discountedPrice = product.getPrice().multiply(factor);
+        }
+
         return ProductResponseDto.builder()
                 .id(product.getId())
                 .name(product.getName())
                 .description(product.getDescription())
                 .price(product.getPrice())
+                .discount(discount)
+                .discountedPrice(discountedPrice)
                 .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
                 .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
                 .images(imageDtos)

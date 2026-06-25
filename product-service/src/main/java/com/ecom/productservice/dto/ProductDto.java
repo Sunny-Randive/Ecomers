@@ -29,6 +29,8 @@ public class ProductDto {
     @DecimalMin(value = "0.01", message = "Price must be greater than zero")
     private BigDecimal price;
 
+    private BigDecimal discount;
+    
     @NotNull(message = "Category ID is required")
     private UUID categoryId;
 }

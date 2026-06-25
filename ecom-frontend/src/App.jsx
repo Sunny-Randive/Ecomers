@@ -48,7 +48,7 @@ export default function App() {
           return {
             ...item,
             productName: product.name,
-            price: product.price,
+            price: (product.discountedPrice !== undefined && product.discount > 0) ? product.discountedPrice : product.price,
             productPrimaryImage: primaryImage?.imageUrl || ''
           };
         } catch (err) {

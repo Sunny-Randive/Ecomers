@@ -38,6 +38,16 @@ export default function SellerDashboard() {
   const [stock, setStock] = useState('10');
   const [showAddForm, setShowAddForm] = useState(false);
 
+  // Edit Product Form State
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+  const [editDiscount, setEditDiscount] = useState('0');
+  const [editStock, setEditStock] = useState('0');
+  const [editCategoryId, setEditCategoryId] = useState('');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
   useEffect(() => {
     fetchInitialData();
   }, []);
@@ -161,6 +171,52 @@ export default function SellerDashboard() {
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || 'Failed to create product. Make sure price and stock are valid.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenEditModal = (product, currentStock) => {
+    setEditingProduct(product);
+    setEditName(product.name);
+    setEditDescription(product.description || '');
+    setEditPrice(product.price.toString());
+    setEditDiscount((product.discount || 0).toString());
+    setEditStock((typeof currentStock === 'number' ? currentStock : 0).toString());
+    setEditCategoryId(product.categoryId || '');
+    setIsEditModalOpen(true);
+    setError('');
+    setSuccess('');
+  };
+
+  const handleUpdateProduct = async (e) => {
+    e.preventDefault();
+    if (!editName || !editPrice || !editCategoryId) {
+      setError('Please fill in all required fields.');
+      return;
+    }
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      await productService.updateProduct(editingProduct.id, {
+        name: editName,
+        description: editDescription,
+        price: parseFloat(editPrice),
+        discount: parseFloat(editDiscount || 0),
+        categoryId: editCategoryId
+      });
+
+      await productService.updateInventory(editingProduct.id, parseInt(editStock || 0));
+
+      setSuccess('Product and inventory stock updated successfully!');
+      setIsEditModalOpen(false);
+      setEditingProduct(null);
+      await fetchProductsAndInventory();
+    } catch (err) {
+      console.error(err);
+      setError('Failed to update product details or stock level.');
     } finally {
       setLoading(false);
     }
@@ -499,6 +555,7 @@ export default function SellerDashboard() {
                       <th style={{ padding: '16px 20px' }}>Price</th>
                       <th style={{ padding: '16px 20px' }}>Inventory Stock</th>
                       <th style={{ padding: '16px 20px' }}>Product ID</th>
+                      <th style={{ padding: '16px 20px' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -525,7 +582,16 @@ export default function SellerDashboard() {
                             {product.categoryName || 'General'}
                           </td>
                           <td style={{ padding: '16px 20px', fontWeight: '600', color: 'hsl(var(--accent))' }}>
-                            ${product.price.toFixed(2)}
+                            {product.discount > 0 ? (
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ color: 'hsl(var(--accent))' }}>${product.discountedPrice ? product.discountedPrice.toFixed(2) : product.price.toFixed(2)}</span>
+                                <span style={{ fontSize: '12px', textDecoration: 'line-through', color: 'hsl(var(--text-muted))', fontWeight: 'normal' }}>
+                                  ${product.price.toFixed(2)} ({product.discount}% off)
+                                </span>
+                              </div>
+                            ) : (
+                              `$${product.price.toFixed(2)}`
+                            )}
                           </td>
                           <td style={{ padding: '16px 20px' }}>
                             <span style={{
@@ -542,6 +608,15 @@ export default function SellerDashboard() {
                           </td>
                           <td style={{ padding: '16px 20px', fontFamily: 'monospace', fontSize: '12px', color: 'hsl(var(--text-muted))' }}>
                             {product.id}
+                          </td>
+                          <td style={{ padding: '16px 20px' }}>
+                            <button
+                              className="btn btn-secondary"
+                              style={{ padding: '6px 12px', fontSize: '13px', border: '1px solid rgba(255,255,255,0.1)' }}
+                              onClick={() => handleOpenEditModal(product, stockVal)}
+                            >
+                              Edit
+                            </button>
                           </td>
                         </tr>
                       );
@@ -739,6 +814,115 @@ export default function SellerDashboard() {
               </table>
             </div>
           )}
+        </div>
+      )}
+      {/* Edit Product Modal */}
+      {isEditModalOpen && editingProduct && (
+        <div className="modal-overlay" onClick={() => { setIsEditModalOpen(false); setEditingProduct(null); }}>
+          <div className="modal-content glass" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                Edit Product & Stock
+              </h2>
+              <button className="close-btn" onClick={() => { setIsEditModalOpen(false); setEditingProduct(null); }}>
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateProduct} style={{ maxHeight: '70vh', overflowY: 'auto', paddingRight: '4px' }}>
+              <div className="form-group" style={{ marginBottom: '14px' }}>
+                <label className="form-label">Product Name *</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '14px' }}>
+                <label className="form-label">Category *</label>
+                <select
+                  className="category-select"
+                  style={{ width: '100%', color: '#fff', fontSize: '14px' }}
+                  value={editCategoryId}
+                  onChange={(e) => setEditCategoryId(e.target.value)}
+                  required
+                >
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+                <div className="form-group">
+                  <label className="form-label">Price ($) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="form-input"
+                    value={editPrice}
+                    onChange={(e) => setEditPrice(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Discount (%)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="100"
+                    className="form-input"
+                    value={editDiscount}
+                    onChange={(e) => setEditDiscount(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '14px' }}>
+                <label className="form-label">Inventory Stock (units) *</label>
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  className="form-input"
+                  value={editStock}
+                  onChange={(e) => setEditStock(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '20px' }}>
+                <label className="form-label">Description</label>
+                <textarea
+                  className="form-input"
+                  style={{ minHeight: '80px', resize: 'vertical' }}
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '15px' }}>
+                <button type="submit" className="btn btn-primary" style={{ flexGrow: 1 }} disabled={loading}>
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ flexGrow: 1 }}
+                  onClick={() => { setIsEditModalOpen(false); setEditingProduct(null); }}
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

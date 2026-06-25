@@ -85,7 +85,7 @@ public class OrderService {
                 throw new IllegalArgumentException("Could not proceed with the order because inventory has insufficient units for product: " + productDto.getName() + " (Available: " + available + ", Requested: " + cartItem.getQuantity() + ")");
             }
 
-            BigDecimal itemPrice = productDto.getPrice();
+            BigDecimal itemPrice = productDto.getDiscountedPrice() != null ? productDto.getDiscountedPrice() : productDto.getPrice();
             BigDecimal itemTotal = itemPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
             totalAmount = totalAmount.add(itemTotal);
 

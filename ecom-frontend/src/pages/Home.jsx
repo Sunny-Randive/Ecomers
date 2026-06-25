@@ -238,10 +238,26 @@ export default function Home({ onAddToCart, user }) {
                     <p className="product-desc">
                       {product.description || 'No description available for this premium product.'}
                     </p>
-                    <div className="product-footer">
-                      <span className="product-price">
-                        ${product.price ? product.price.toFixed(2) : '0.00'}
-                      </span>
+                    <div className="product-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                      {product.discount > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span className="product-price" style={{ color: 'hsl(var(--accent))' }}>
+                            ${product.discountedPrice ? product.discountedPrice.toFixed(2) : '0.00'}
+                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '12px', textDecoration: 'line-through', color: 'hsl(var(--text-muted))' }}>
+                              ${product.price ? product.price.toFixed(2) : '0.00'}
+                            </span>
+                            <span style={{ fontSize: '10px', fontWeight: '700', padding: '1px 4px', borderRadius: '3px', backgroundColor: 'rgba(235, 140, 22, 0.15)', color: '#eb8c16' }}>
+                              {product.discount}% OFF
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="product-price">
+                          ${product.price ? product.price.toFixed(2) : '0.00'}
+                        </span>
+                      )}
                       <button
                         className="btn btn-secondary"
                         style={{ padding: '8px 12px', borderRadius: '8px' }}
@@ -342,9 +358,23 @@ export default function Home({ onAddToCart, user }) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '15px' }}>
                   <div>
                     <span style={{ fontSize: '12px', color: 'hsl(var(--text-muted))' }}>Price:</span>
-                    <div style={{ fontSize: '24px', fontWeight: '700', color: 'hsl(var(--accent))' }}>
-                      ${selectedProduct.price ? selectedProduct.price.toFixed(2) : '0.00'}
-                    </div>
+                    {selectedProduct.discount > 0 ? (
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
+                        <div style={{ fontSize: '24px', fontWeight: '700', color: 'hsl(var(--accent))' }}>
+                          ${selectedProduct.discountedPrice ? selectedProduct.discountedPrice.toFixed(2) : '0.00'}
+                        </div>
+                        <div style={{ fontSize: '14px', textDecoration: 'line-through', color: 'hsl(var(--text-muted))' }}>
+                          ${selectedProduct.price ? selectedProduct.price.toFixed(2) : '0.00'}
+                        </div>
+                        <div style={{ fontSize: '11px', fontWeight: '700', padding: '2px 6px', borderRadius: '4px', backgroundColor: 'rgba(235, 140, 22, 0.15)', color: '#eb8c16' }}>
+                          {selectedProduct.discount}% OFF
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '24px', fontWeight: '700', color: 'hsl(var(--accent))', marginTop: '4px' }}>
+                        ${selectedProduct.price ? selectedProduct.price.toFixed(2) : '0.00'}
+                      </div>
+                    )}
                   </div>
 
                   <div>
