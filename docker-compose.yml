@@ -225,6 +225,7 @@ services:
       EUREKA_CLIENT_SERVICE-URL_DEFAULTZONE: http://discovery-server:8761/eureka/
       DB_HOST: postgres
       REDIS_HOST: redis
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0 -XX:ActiveProcessorCount=1"
     deploy:
       resources:
@@ -282,6 +283,7 @@ services:
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICE-URL_DEFAULTZONE: http://discovery-server:8761/eureka/
       DB_HOST: postgres
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0 -XX:ActiveProcessorCount=1"
     deploy:
       resources:

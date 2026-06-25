@@ -308,6 +308,11 @@ spec:
                 configMapKeyRef:
                   name: ecom-configmap
                   key: REDIS_HOST
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: KAFKA_BOOTSTRAP_SERVERS
           resources:
             limits:
               cpu: "500m"
@@ -433,6 +438,11 @@ spec:
                 secretKeyRef:
                   name: ecom-secrets
                   key: db-password
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: ecom-configmap
+                  key: KAFKA_BOOTSTRAP_SERVERS
           resources:
             limits:
               cpu: "500m"
