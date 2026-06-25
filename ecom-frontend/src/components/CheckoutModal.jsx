@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { userService, orderService } from '../services/api';
+import { userService, orderService, productService } from '../services/api';
 import { X, CreditCard, Home, Plus, Lock, ShieldCheck, Check, Loader2 } from 'lucide-react';
 
 export default function CheckoutModal({ isOpen, onClose, cart, onOrderSuccess }) {
@@ -160,11 +160,34 @@ export default function CheckoutModal({ isOpen, onClose, cart, onOrderSuccess })
     return Object.keys(errors).length === 0;
   };
 
-  const handleProceedToGateway = () => {
+  const checkCartInventory = async () => {
+    setError('');
+    for (const item of cart.items) {
+      try {
+        const inv = await productService.getInventory(item.productId);
+        if (inv.availableQuantity < item.quantity) {
+          setError(`Could not proceed with the order because inventory has insufficient units for product: ${item.productName} (Available: ${inv.availableQuantity}, Requested: ${item.quantity})`);
+          return false;
+        }
+      } catch (err) {
+        console.error("Failed to verify inventory for item:", item.productName, err);
+        setError("Could not verify inventory stock status. Please try again.");
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleProceedToGateway = async () => {
     if (!selectedAddressId) {
       setError('Please select or add a shipping address.');
       return;
     }
+    
+    setLoading(true);
+    const isStockAvailable = await checkCartInventory();
+    setLoading(false);
+    if (!isStockAvailable) return;
     
     if (paymentMethod === 'CREDIT_CARD') {
       if (!validateCardDetails()) {
@@ -225,6 +248,12 @@ export default function CheckoutModal({ isOpen, onClose, cart, onOrderSuccess })
     }
     setError('');
     setLoading(true);
+
+    const isStockAvailable = await checkCartInventory();
+    if (!isStockAvailable) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const formattedAddress = getFormattedAddress();

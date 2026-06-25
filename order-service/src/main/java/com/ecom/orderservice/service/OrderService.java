@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.ecom.orderservice.client.CartClient;
 import com.ecom.orderservice.client.ProductClient;
+import com.ecom.orderservice.client.InventoryClient;
+import com.ecom.orderservice.dto.client.InventoryDto;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final CartClient cartClient;
     private final ProductClient productClient;
+    private final InventoryClient inventoryClient;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Transactional
@@ -66,6 +69,20 @@ public class OrderService {
 
             if (productDto == null) {
                 throw new IllegalArgumentException("Product not found: " + cartItem.getProductId());
+            }
+
+            // Verify stock
+            InventoryDto inventoryDto;
+            try {
+                inventoryDto = inventoryClient.getInventoryByProductId(cartItem.getProductId());
+            } catch (Exception e) {
+                log.error("Failed to check inventory for product {}: {}", cartItem.getProductId(), e.getMessage());
+                throw new IllegalStateException("Inventory service is currently unavailable. Please try again later.");
+            }
+
+            if (inventoryDto == null || inventoryDto.getAvailableQuantity() < cartItem.getQuantity()) {
+                Integer available = inventoryDto != null ? inventoryDto.getAvailableQuantity() : 0;
+                throw new IllegalArgumentException("Could not proceed with the order because inventory has insufficient units for product: " + productDto.getName() + " (Available: " + available + ", Requested: " + cartItem.getQuantity() + ")");
             }
 
             BigDecimal itemPrice = productDto.getPrice();
