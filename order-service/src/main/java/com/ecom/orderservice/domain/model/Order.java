@@ -36,6 +36,9 @@ public class Order {
     @Column(name = "payment_method", length = 50)
     private String paymentMethod;
 
+    @Column(name = "shipping_address")
+    private String shippingAddress;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();

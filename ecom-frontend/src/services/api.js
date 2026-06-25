@@ -203,10 +203,11 @@ export const orderService = {
     return response.data;
   },
 
-  checkout: async (shippingAddressId, paymentMethod = 'CREDIT_CARD') => {
+  checkout: async (shippingAddressId, paymentMethod = 'CREDIT_CARD', shippingAddress = '') => {
     const response = await apiClient.post('/api/v1/orders/checkout', {
       shippingAddressId,
-      paymentMethod
+      paymentMethod,
+      shippingAddress
     });
     return response.data;
   },

@@ -14,7 +14,9 @@ import {
   ClipboardList,
   CheckCircle,
   AlertCircle,
-  ShoppingBag
+  ShoppingBag,
+  MapPin,
+  CreditCard
 } from 'lucide-react';
 
 export default function SellerDashboard() {
@@ -183,6 +185,30 @@ export default function SellerDashboard() {
   const getProductName = (productId) => {
     const product = products.find(p => p.id === productId);
     return product ? product.name : `Product (${productId.substring(0, 8)})`;
+  };
+
+  const getPaymentStatus = (order) => {
+    const method = order.paymentMethod || 'CREDIT_CARD';
+    const status = order.status;
+    if (method === 'COD') {
+      if (status === 'DELIVERED') {
+        return { text: 'Paid (COD)', color: '#10b981', bgColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.2)' };
+      } else if (status === 'CANCELLED' || status === 'FAILED') {
+        return { text: 'Failed / Cancelled', color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.2)' };
+      } else {
+        return { text: 'Collect on Delivery', color: '#f59e0b', bgColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.2)' };
+      }
+    } else {
+      if (status === 'FAILED') {
+        return { text: 'Failed / Declined', color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.2)' };
+      } else if (status === 'PENDING') {
+        return { text: 'Pending Auth', color: '#f59e0b', bgColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.2)' };
+      } else if (status === 'CANCELLED') {
+        return { text: 'Refunded / Cancelled', color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.2)' };
+      } else {
+        return { text: 'Paid (Succeeded)', color: '#10b981', bgColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.2)' };
+      }
+    }
   };
 
   const getStatusStyles = (status) => {
@@ -584,6 +610,8 @@ export default function SellerDashboard() {
                 <thead>
                   <tr style={{ background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                     <th style={{ padding: '16px 20px' }}>Order Info</th>
+                    <th style={{ padding: '16px 20px' }}>Shipping Address</th>
+                    <th style={{ padding: '16px 20px' }}>Payment Info</th>
                     <th style={{ padding: '16px 20px' }}>Items</th>
                     <th style={{ padding: '16px 20px' }}>Total Amount</th>
                     <th style={{ padding: '16px 20px' }}>Status</th>
@@ -600,6 +628,8 @@ export default function SellerDashboard() {
                       minute: '2-digit'
                     });
 
+                    const payStatus = getPaymentStatus(order);
+
                     return (
                       <tr key={order.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                         <td style={{ padding: '16px 20px' }}>
@@ -611,6 +641,41 @@ export default function SellerDashboard() {
                           </div>
                           <div style={{ fontSize: '11px', color: 'hsl(var(--text-muted))', marginTop: '2px', fontFamily: 'monospace' }}>
                             User: {order.userId.substring(0, 8)}...
+                          </div>
+                        </td>
+                        <td style={{ padding: '16px 20px', maxWidth: '180px' }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', fontSize: '13px', color: 'hsl(var(--text-muted))', lineHeight: '1.4' }}>
+                            <MapPin size={14} style={{ color: 'hsl(var(--primary))', flexShrink: 0, marginTop: '2px' }} />
+                            <span>{order.shippingAddress || 'No shipping address'}</span>
+                          </div>
+                        </td>
+                        <td style={{ padding: '16px 20px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-start' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#fff', fontWeight: '500' }}>
+                              {order.paymentMethod === 'COD' ? (
+                                <>
+                                  <DollarSign size={13} style={{ color: '#f59e0b' }} />
+                                  <span>Cash on Delivery</span>
+                                </>
+                              ) : (
+                                <>
+                                  <CreditCard size={13} style={{ color: 'hsl(var(--primary))' }} />
+                                  <span>Credit / Debit Card</span>
+                                </>
+                              )}
+                            </div>
+                            <span style={{
+                              padding: '3px 8px',
+                              borderRadius: '4px',
+                              fontSize: '11px',
+                              fontWeight: '600',
+                              textTransform: 'uppercase',
+                              backgroundColor: payStatus.bgColor,
+                              color: payStatus.color,
+                              border: payStatus.border
+                            }}>
+                              {payStatus.text}
+                            </span>
                           </div>
                         </td>
                         <td style={{ padding: '16px 20px' }}>

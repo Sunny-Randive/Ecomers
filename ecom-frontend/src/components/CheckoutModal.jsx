@@ -99,6 +99,12 @@ export default function CheckoutModal({ isOpen, onClose, cart, onOrderSuccess })
     }
   };
 
+  const getFormattedAddress = () => {
+    const addr = addresses.find(a => a.id === selectedAddressId);
+    if (!addr) return '';
+    return `${addr.street}, ${addr.city}, ${addr.state} ${addr.zipCode}, ${addr.country}`;
+  };
+
   // Card formatting helpers
   const handleCardNumberChange = (e) => {
     const input = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
@@ -194,7 +200,8 @@ export default function CheckoutModal({ isOpen, onClose, cart, onOrderSuccess })
       
       setTimeout(async () => {
         try {
-          const order = await orderService.checkout(selectedAddressId, paymentMethod);
+          const formattedAddress = getFormattedAddress();
+          const order = await orderService.checkout(selectedAddressId, paymentMethod, formattedAddress);
           onOrderSuccess(order);
           onClose();
         } catch (err) {
@@ -220,7 +227,8 @@ export default function CheckoutModal({ isOpen, onClose, cart, onOrderSuccess })
     setLoading(true);
 
     try {
-      const order = await orderService.checkout(selectedAddressId, paymentMethod);
+      const formattedAddress = getFormattedAddress();
+      const order = await orderService.checkout(selectedAddressId, paymentMethod, formattedAddress);
       onOrderSuccess(order);
       onClose();
     } catch (err) {

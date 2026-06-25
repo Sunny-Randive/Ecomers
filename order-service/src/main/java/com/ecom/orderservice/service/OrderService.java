@@ -53,6 +53,7 @@ public class OrderService {
                 .userId(userId)
                 .status("PENDING")
                 .paymentMethod(request.getPaymentMethod())
+                .shippingAddress(request.getShippingAddress())
                 .totalAmount(BigDecimal.ZERO)
                 .build();
 
@@ -201,6 +202,7 @@ public class OrderService {
                 .totalAmount(order.getTotalAmount())
                 .status(order.getStatus())
                 .paymentMethod(order.getPaymentMethod())
+                .shippingAddress(order.getShippingAddress())
                 .items(itemDtos)
                 .createdAt(order.getCreatedAt())
                 .deliveredAt(order.getDeliveredAt())

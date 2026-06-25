@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { orderService, productService } from '../services/api';
-import { Package, Calendar, Tag, RefreshCw, Clock, Truck, CheckCircle, AlertCircle } from 'lucide-react';
+import { Package, Calendar, Tag, RefreshCw, Clock, Truck, CheckCircle, AlertCircle, MapPin, CreditCard, DollarSign } from 'lucide-react';
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
@@ -73,6 +73,30 @@ export default function Orders() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const getPaymentStatus = (order) => {
+    const method = order.paymentMethod || 'CREDIT_CARD';
+    const status = order.status;
+    if (method === 'COD') {
+      if (status === 'DELIVERED') {
+        return { text: 'Paid (COD)', color: '#10b981', bgColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.2)' };
+      } else if (status === 'CANCELLED' || status === 'FAILED') {
+        return { text: 'Failed / Cancelled', color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.2)' };
+      } else {
+        return { text: 'Collect on Delivery', color: '#f59e0b', bgColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.2)' };
+      }
+    } else {
+      if (status === 'FAILED') {
+        return { text: 'Failed / Declined', color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.2)' };
+      } else if (status === 'PENDING') {
+        return { text: 'Pending Auth', color: '#f59e0b', bgColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.2)' };
+      } else if (status === 'CANCELLED') {
+        return { text: 'Refunded / Cancelled', color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.2)' };
+      } else {
+        return { text: 'Paid (Succeeded)', color: '#10b981', bgColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.2)' };
+      }
+    }
   };
 
   const getStatusStyles = (status) => {
@@ -278,6 +302,60 @@ export default function Orders() {
                   {/* Progress Tracker */}
                   <div style={{ marginTop: '4px' }}>
                     {renderProgressStepper(order.status)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Shipping Address and Payment Info grid */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '16px',
+                backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                borderRadius: '8px',
+                padding: '16px',
+                marginBottom: '16px'
+              }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'white', fontWeight: '600' }}>
+                    <MapPin size={12} style={{ color: 'hsl(var(--primary))' }} />
+                    <span>Shipping Address</span>
+                  </div>
+                  <div style={{ fontSize: '13px', color: 'hsl(var(--text-muted))', lineHeight: '1.4' }}>
+                    {order.shippingAddress || 'No shipping address specified.'}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'white', fontWeight: '600' }}>
+                    {order.paymentMethod === 'COD' ? (
+                      <DollarSign size={12} style={{ color: '#f59e0b' }} />
+                    ) : (
+                      <CreditCard size={12} style={{ color: 'hsl(var(--primary))' }} />
+                    )}
+                    <span>Payment Method</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '13px', color: 'hsl(var(--text-muted))' }}>
+                      {order.paymentMethod === 'COD' ? 'Cash on Delivery' : 'Credit / Debit Card'}
+                    </span>
+                    {(() => {
+                      const payStatus = getPaymentStatus(order);
+                      return (
+                        <span style={{
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          fontSize: '10px',
+                          fontWeight: '600',
+                          textTransform: 'uppercase',
+                          backgroundColor: payStatus.bgColor,
+                          color: payStatus.color,
+                          border: payStatus.border
+                        }}>
+                          {payStatus.text}
+                        </span>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>

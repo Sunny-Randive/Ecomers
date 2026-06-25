@@ -20,6 +20,7 @@ public class OrderResponseDto {
     private BigDecimal totalAmount;
     private String status;
     private String paymentMethod;
+    private String shippingAddress;
     private List<OrderItemResponseDto> items;
     private LocalDateTime createdAt;
     private LocalDateTime deliveredAt;
