@@ -41,13 +41,15 @@ public class PaymentService {
 
             BigDecimal amount = orderDto.getTotalAmount();
             String transactionRef = "TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            String paymentMethod = orderDto.getPaymentMethod();
 
-            // 2. Simulate mock transaction (95% success rate to demonstrate Saga compensation on failure)
-            boolean isSuccess = random.nextDouble() < 0.95; 
+            // 2. Simulate mock transaction (95% success rate for CREDIT_CARD to demonstrate Saga compensation on failure, 100% for COD)
+            boolean isSuccess = "COD".equalsIgnoreCase(paymentMethod) || (random.nextDouble() < 0.95); 
             
             Payment payment = Payment.builder()
                     .orderId(orderId)
                     .amount(amount)
+                    .paymentMethod(paymentMethod != null ? paymentMethod : "CREDIT_CARD")
                     .transactionStatus(isSuccess ? "SUCCESS" : "FAILED")
                     .transactionReference(transactionRef)
                     .build();

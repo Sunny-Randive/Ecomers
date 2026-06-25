@@ -19,6 +19,7 @@ public class OrderResponseDto {
     private UUID userId;
     private BigDecimal totalAmount;
     private String status;
+    private String paymentMethod;
     private List<OrderItemResponseDto> items;
     private LocalDateTime createdAt;
     private LocalDateTime deliveredAt;

@@ -33,6 +33,9 @@ public class Order {
     @Column(nullable = false, length = 20)
     private String status; // PENDING, CONFIRMED, COMPLETED, CANCELLED, FAILED
 
+    @Column(name = "payment_method", length = 50)
+    private String paymentMethod;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();

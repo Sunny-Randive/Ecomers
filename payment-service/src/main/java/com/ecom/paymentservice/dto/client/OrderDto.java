@@ -15,4 +15,5 @@ import java.util.UUID;
 public class OrderDto {
     private UUID id;
     private BigDecimal totalAmount;
+    private String paymentMethod;
 }
