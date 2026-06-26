@@ -128,6 +128,11 @@ export const productService = {
     return response.data;
   },
 
+  updateProduct: async (id, productDto) => {
+    const response = await apiClient.put(`/api/v1/products/${id}`, productDto);
+    return response.data;
+  },
+
   updateInventory: async (productId, quantity) => {
     const response = await apiClient.put(`/api/v1/inventory/${productId}`, null, {
       params: { quantity }
